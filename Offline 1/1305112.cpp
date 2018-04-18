@@ -95,6 +95,7 @@ int main()
     points.erase(points.begin()+len-1);
     len--;
 
+
     for(vector<point>::iterator it=points.begin()+1;it!=points.end();)
     {
         point a=*(it-1);
@@ -109,9 +110,18 @@ int main()
         }
         else it++;
     }
+
+
     hull.push_back(bottom);
     hull.push_back(points[0]);
-    for(vector<point>::iterator it=points.begin()+1;it!=points.end();it++)
+    points.erase(points.begin());
+
+    for(vector<point>::iterator it=points.begin();it!=points.end();it++)         //print
+    {
+        point tr=*it;
+        cout<<tr.x<<" "<<tr.y<<" "<<tr.angle<<endl;
+    }
+    for(vector<point>::iterator it=points.begin();it!=points.end();it++)
     {
         int turn=checkTurn(*it);
         if(turn>0)hull.push_back(*it);
@@ -119,6 +129,7 @@ int main()
         {
             hull.pop_back();
             turn=checkTurn(*it);
+            if(turn>0)hull.push_back(*it);
         }
     }
 
