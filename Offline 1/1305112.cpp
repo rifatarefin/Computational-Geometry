@@ -20,7 +20,7 @@ bool compareByAngle(const point &a, const point &b)
     return a.angle < b.angle;
 }
 point bottom;
-vector<point>points;
+vector<point>points,all;
 vector<point>hull;
 set<point>con;
 
@@ -171,13 +171,27 @@ void display()
 
 
     glScalef(10,10,1);
+    glPointSize(3);
+    for(vector<point>::iterator it=all.begin(); it!=all.end(); it++)       //print
+    {
+        point tr=*it;
+        glColor3f(1.0, 1.0, 0);
+        glBegin(GL_POINTS);
+        {
+
+            glVertex3f(tr.x,tr.y,0);
+
+        }
+        glEnd();
+
+    }
     for(vector<point>::iterator it=hull.begin()+1; it!=hull.end(); it++)
     {
         point tr=*it;
         //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
         point nx=*(it-1);
 
-        glColor3f(1.0, 0.1, 1.0);
+        glColor3f(1.0,0,0);
         glBegin(GL_LINES);
         {
             glVertex3f( nx.x,nx.y,0);
@@ -191,7 +205,7 @@ void display()
     //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
     point nx=hull[hull.size()-1];
 
-    glColor3f(1.0, 0.1, 1.0);
+    glColor3f(1.0,0,0);
     glBegin(GL_LINES);
     {
         glVertex3f( nx.x,nx.y,0);
@@ -251,6 +265,7 @@ int main(int argc, char **argv)
 
 
     input();
+    all=points;
     int len;
     point top,rt,lf;
     top.y=INT_MIN;
