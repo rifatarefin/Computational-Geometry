@@ -10,21 +10,48 @@
 #include<GL/glut.h>
 using namespace std;
 #define pi (2*acos(0.0))
-ifstream fin("input1.txt");
+ifstream fin("input2.txt");
 
 struct point
 {
     double x,y;
+    int order,vertexType;
+    mutable int helperIndex;
 
 };
-
-int vertexType[1000];
+int N;
 set<point>T;
+vector<point>points,sorted,newEdges;
 
+point nextPoint(point p)
+{
+    int id=p.order;
+    point tmp;
+    if(id==points.size()-1)tmp=points[0];
+    else tmp =points[id+1];
+    return tmp;
+}
+
+point prevPoint(point p)
+{
+    int id=p.order;
+    point tmp;
+    if(id==0)tmp=points[points.size()-1];
+    else tmp =points[id-1];
+    return tmp;
+}
 
 inline bool operator<(const point& lhs, const point& rhs)
 {
-    return lhs.x < rhs.x || ((lhs.x==rhs.x) && (lhs.y>rhs.y) );
+
+    point nxt=nextPoint(lhs);
+    double v1x=lhs.x-rhs.x;
+    double v1y=lhs.y-rhs.y;
+
+    double v2x=nxt.x-rhs.x;
+    double v2y=nxt.y-rhs.y;
+    return v1x*v2y-v1y*v2x>0;
+
 }
 
 inline bool operator==(const point& lhs, const point& rhs)
@@ -37,8 +64,7 @@ bool compareByY(const point &a, const point &b)
     return (a.y > b.y) ||((a.y==b.y) && (a.x<b.x));
 }
 
-vector<point>points,sorted,newEdges;
-map<point,point>helper;
+
 
 void input()
 {
@@ -46,14 +72,20 @@ void input()
     double a, b;
     point np;
     fin>>n;
+    points.clear();
     for(int i=0; i<n; i++)
     {
         fin>>a>>b;
         np.x=a;
         np.y=b;
-
+        np.order=i;
         points.push_back(np);
     }
+}
+
+bool below(point a, point b)        //a below b
+{
+    return a.y<b.y || (a.y==b.y && a.x>b.x);
 }
 
 double checkTurn(point a, point b, point c)
@@ -72,20 +104,41 @@ void CheckVertexType()
     point a,b,c;
     for(vector<point>::iterator it=points.begin();it!=points.end();it++)
     {
-        if(it==points.begin())a=points[points.size()-1];
-        else a=*(it-1);
-
-        if(it==points.end()-1)c=points[0];
-        else c=*(it+1);
-
         b=*it;
-        int i=it-points.begin();
-        if(checkTurn(a,b,c)>0 && b.y>a.y && b.y>c.y)vertexType[i]=START;
-        else if(checkTurn(a,b,c)>0 && b.y<a.y && b.y<c.y)vertexType[i]=END;
-        else if(checkTurn(a,b,c)<0 && b.y>a.y && b.y>c.y)vertexType[i]=SPLIT;
-        else if(checkTurn(a,b,c)<0 && b.y<a.y && b.y<c.y)vertexType[i]=MERGE;
-        else if(a.y>c.y)vertexType[i]=LEFT_REGULAR;
-        else if(c.y>a.y)vertexType[i]=RIGHT_REGULAR;//    cout<<"right vertex "<<b.x<<" "<<b.y<<endl;
+        a=prevPoint(b);
+
+        c=nextPoint(b);
+        (*it).helperIndex=b.order;
+        if(checkTurn(a,b,c)>0 && below(a,b) && below(c,b))
+        {
+            (*it).vertexType=START;
+            cout<<b.x<<" "<<b.y<<" Start"<<endl;
+        }
+        else if(checkTurn(a,b,c)>0 && below(b,a) && below(b,c))
+        {
+            (*it).vertexType=END;
+            cout<<b.x<<" "<<b.y<<" End"<<endl;
+        }
+        else if(checkTurn(a,b,c)<0 && below(a,b) && below(c,b))
+        {
+            (*it).vertexType=SPLIT;
+            cout<<b.x<<" "<<b.y<<" Split"<<endl;
+        }
+        else if(checkTurn(a,b,c)<0 && below(b,a) && below(b,c))
+        {
+            (*it).vertexType=MERGE;//cout<<b.x<<" "<<b.y<<endl;}
+            cout<<b.x<<" "<<b.y<<" Merge"<<endl;
+    }
+        else if(below(c,a))
+        {
+            (*it).vertexType=LEFT_REGULAR;
+            cout<<b.x<<" "<<b.y<<" Left"<<endl;
+        }
+        else if(below(a,c))
+        {
+            (*it).vertexType=RIGHT_REGULAR;//    cout<<"right vertex "<<b.x<<" "<<b.y<<endl;
+            cout<<b.x<<" "<<b.y<<" Right"<<endl;
+        }
 
 
     }
@@ -94,23 +147,147 @@ void CheckVertexType()
 
 void handleStartVertex(point v)
 {
+
+    v.helperIndex=v.order;
     T.insert(v);
-    helper[v]=v;
-    cout<<v.x<<" "<<v.y<<endl;
+    //cout<<v.x<<" "<<v.y<<endl;
 }
+
+void handleSplitVertex(point v)
+{
+
+    set<point>::iterator it=T.lower_bound(v);
+    it--;
+    point e=*it;
+    point helper=points[e.helperIndex];
+    newEdges.push_back(v);
+    newEdges.push_back(helper);
+    (*it).helperIndex=v.order;
+    v.helperIndex=v.order;
+
+    vector<point>::iterator vt=find(points.begin(),points.end(),*it);
+    (*vt).helperIndex=v.order;
+
+    T.insert(v);
+
+
+}
+
+void handleMergeVertex(point v)
+{
+    point pre=prevPoint(v);
+    point prehelper=points[pre.helperIndex];
+
+    if(prehelper.vertexType==MERGE)
+    {
+        newEdges.push_back(v);
+        newEdges.push_back(prehelper);
+    }
+
+
+    set<point>::iterator xt=find(T.begin(),T.end(),pre);
+    if(xt!=T.end())T.erase(xt);
+    xt=T.lower_bound(v);
+    xt--;
+    point left=*xt;
+    point lefthelper=points[left.helperIndex];
+    if(lefthelper.vertexType==MERGE)
+    {
+        newEdges.push_back(v);
+        newEdges.push_back(lefthelper);
+        cout<<"dds"<<endl;
+    }
+    (*xt).helperIndex=v.order;
+    vector<point>::iterator vt=find(points.begin(),points.end(),*xt);
+    (*vt).helperIndex=v.order;
+
+
+}
+
+void handleLeftRegularVertex(point v)
+{
+    point pre=prevPoint(v);
+    point prehelper=points[pre.helperIndex];
+    if(prehelper.vertexType==MERGE)
+    {
+        newEdges.push_back(v);
+        newEdges.push_back(prehelper);
+    }
+
+    set<point>::iterator xt=find(T.begin(),T.end(),pre);
+    if(xt!=T.end())T.erase(xt);
+    v.helperIndex=v.order;
+    T.insert(v);
+
+}
+
+void handleRightRegularVertex(point v)
+{
+    set<point>::iterator it=T.lower_bound(v);
+    it--;
+    point e=*it;
+    point helper=points[e.helperIndex];
+    if(helper.vertexType==MERGE)
+    {
+        newEdges.push_back(v);
+        newEdges.push_back(helper);
+    }
+    (*it).helperIndex=v.order;
+
+    vector<point>::iterator vt=find(points.begin(),points.end(),*it);
+    (*vt).helperIndex=v.order;
+}
+
+void handleEndVertex(point v)
+{
+    point pre=prevPoint(v);
+    point prehelper=points[pre.helperIndex];
+    if(prehelper.vertexType==MERGE)
+    {
+        newEdges.push_back(v);
+        newEdges.push_back(prehelper);
+    }
+    set<point>::iterator xt=find(T.begin(),T.end(),pre);
+    if(xt!=T.end())T.erase(xt);
+}
+
+
 
 void iterate()
 {
     for(vector<point>::iterator it=sorted.begin();it!=sorted.end();it++)
     {
         point v=*it;
-        vector<point>::iterator x=find(points.begin(),points.end(),v);
-        //cout<<v.x<<" "<<v.y<<" "<<x-points.begin()<<endl;
-        int id=x-points.begin();
-        if(vertexType[id]==START)
+
+        if(v.vertexType==START)
+        {
+            //cout<<v.x<<" "<<v.y<<endl;
+            handleStartVertex(*it);
+        }
+        else if(v.vertexType==SPLIT)
         {
 
-            handleStartVertex(v);
+            handleSplitVertex(v);
+        }
+        else if(v.vertexType==MERGE)
+        {
+
+            handleMergeVertex(v);
+        }
+        else if(v.vertexType==LEFT_REGULAR)
+        {
+
+            handleLeftRegularVertex(v);
+        }
+        else if(v.vertexType==RIGHT_REGULAR)
+        {
+
+            handleRightRegularVertex(v);
+        }
+        else if(v.vertexType==END)
+        {
+
+            handleEndVertex(v);
         }
     }
 }
@@ -221,7 +398,21 @@ void display()
     }
     glEnd();
 
+    for(vector<point>::iterator it=newEdges.begin(); it!=newEdges.end(); it+=2)
+    {
+        point tr=*it;
+        //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
+        point nx=*(it+1);
 
+        glColor3f(0,0,1.0);
+        glBegin(GL_LINES);
+        {
+            glVertex3f( nx.x,nx.y,0);
+            glVertex3f(tr.x,tr.y,0);
+
+        }
+        glEnd();
+    }
 
     drawAxes();
 
@@ -275,11 +466,9 @@ int main(int argc, char **argv)
     sorted=points;
     sort(sorted.begin(),sorted.end(),compareByY);
     iterate();
-    for(set<point>::iterator it=T.begin();it!=T.end();it++)
-    {
-        point s=*it;
-        cout<<s.x<<" "<<s.y<<endl;
-    }
+
+
+    for(set<point>::iterator it=T.begin();it!=T.end();it++)cout<<(*it).x<<" "<<(*it).y<<endl;
 
 
 
