@@ -10,7 +10,7 @@
 #include<GL/glut.h>
 using namespace std;
 #define pi (2*acos(0.0))
-ifstream fin("input5.txt");
+ifstream fin("input1.txt");
 
 struct point
 {
@@ -103,7 +103,7 @@ double checkTurn(point a, point b, point c)
 void CheckVertexType()
 {
     point a,b,c;
-    for(vector<point>::iterator it=points.begin();it!=points.end();it++)
+    for(vector<point>::iterator it=points.begin(); it!=points.end(); it++)
     {
         b=*it;
         a=prevPoint(b);
@@ -129,7 +129,7 @@ void CheckVertexType()
         {
             (*it).vertexType=MERGE;//cout<<b.x<<" "<<b.y<<endl;}
             cout<<b.x<<" "<<b.y<<" Merge"<<endl;
-    }
+        }
         else if(below(c,a))
         {
             (*it).vertexType=LEFT_REGULAR;
@@ -146,7 +146,8 @@ void CheckVertexType()
 
 }
 
-void handleStartVertex(point v)
+
+void handleStartVertex(point &v)
 {
 
     v.helperIndex=v.order;
@@ -154,7 +155,7 @@ void handleStartVertex(point v)
     //cout<<v.x<<" "<<v.y<<endl;
 }
 
-void handleSplitVertex(point v)
+void handleSplitVertex(point &v)
 {
 
     set<point>::iterator it=T.lower_bound(v);
@@ -164,17 +165,14 @@ void handleSplitVertex(point v)
     newEdges.push_back(v);
     newEdges.push_back(helper);
     (*it).helperIndex=v.order;
-    v.helperIndex=v.order;
 
-    vector<point>::iterator vt=find(points.begin(),points.end(),*it);
-    (*vt).helperIndex=v.order;
 
     T.insert(v);
 
 
 }
 
-void handleMergeVertex(point v)
+void handleMergeVertex(point &v)
 {
     point pre=prevPoint(v);
     point prehelper=points[pre.helperIndex];
@@ -183,8 +181,7 @@ void handleMergeVertex(point v)
     {
         newEdges.push_back(v);
         newEdges.push_back(prehelper);
-        cout<<v.x<<" p "<<v.y<<endl;
-        cout<<prehelper.x<<" p "<<prehelper.y<<endl;
+
     }
 
 
@@ -201,13 +198,13 @@ void handleMergeVertex(point v)
         //cout<<"dds "<<v.x<<" "<<v.y<<" "<<lefthelper.x<<" "<<lefthelper.y<<endl;
     }
     (*xt).helperIndex=v.order;
-    vector<point>::iterator vt=find(points.begin(),points.end(),*xt);
-    (*vt).helperIndex=v.order;
+    points[left.order].helperIndex=v.order;
+
 
 
 }
 
-void handleLeftRegularVertex(point v)
+void handleLeftRegularVertex(point &v)
 {
     point pre=prevPoint(v);
     point prehelper=points[pre.helperIndex];
@@ -219,12 +216,11 @@ void handleLeftRegularVertex(point v)
 
     set<point>::iterator xt=find(T.begin(),T.end(),pre);
     if(xt!=T.end())T.erase(xt);
-    v.helperIndex=v.order;
     T.insert(v);
 
 }
 
-void handleRightRegularVertex(point v)
+void handleRightRegularVertex(point &v)
 {
     set<point>::iterator it=T.lower_bound(v);
     it--;
@@ -237,11 +233,11 @@ void handleRightRegularVertex(point v)
     }
     (*it).helperIndex=v.order;
 
-    vector<point>::iterator vt=find(points.begin(),points.end(),*it);
-    (*vt).helperIndex=v.order;
+    points[e.order].helperIndex=v.order;
+
 }
 
-void handleEndVertex(point v)
+void handleEndVertex(point &v)
 {
     point pre=prevPoint(v);
     point prehelper=points[pre.helperIndex];
@@ -255,51 +251,52 @@ void handleEndVertex(point v)
 }
 
 
-
 void iterate()
 {
-    for(vector<point>::iterator it=sorted.begin();it!=sorted.end();it++)
+    for(vector<point>::iterator it=sorted.begin(); it!=sorted.end(); it++)
     {
         point v=*it;
 
         if(v.vertexType==START)
         {
             //cout<<v.x<<" "<<v.y<<endl;
-            handleStartVertex(*it);
+            handleStartVertex(points[v.order]);
         }
         else if(v.vertexType==SPLIT)
         {
 
-            handleSplitVertex(v);
+            handleSplitVertex(points[v.order]);
         }
         else if(v.vertexType==MERGE)
         {
 
-            handleMergeVertex(v);
+            handleMergeVertex(points[v.order]);
         }
         else if(v.vertexType==LEFT_REGULAR)
         {
 
-            handleLeftRegularVertex(v);
+            handleLeftRegularVertex(points[v.order]);
         }
         else if(v.vertexType==RIGHT_REGULAR)
         {
 
-            handleRightRegularVertex(v);
+            handleRightRegularVertex(points[v.order]);
         }
         else if(v.vertexType==END)
         {
 
-            handleEndVertex(v);
+            handleEndVertex(points[v.order]);
         }
     }
 }
+
+
 
 void createMonotones()
 {
     vector<point>current=points;
     vector<point>upper,lower;
-    for(vector<point>::iterator it=newEdges.begin();it!=newEdges.end();it+=2)
+    for(vector<point>::iterator it=newEdges.begin(); it!=newEdges.end(); it+=2)
     {
         point x2=*it;
         point x1=*(it+1);
@@ -322,7 +319,7 @@ void createMonotones()
 
         }
         int flag=0;
-        for(vector<point>::iterator vt=upper.begin()+1;vt!=upper.end()-1;vt++)
+        for(vector<point>::iterator vt=upper.begin()+1; vt!=upper.end()-1; vt++)
         {
             point b=*vt;
             point a=*(vt-1);
@@ -375,7 +372,7 @@ void triangulate(vector<point>mono)
     top.y=INT_MIN;
     bottom.x=INT_MIN;
     bottom.y=INT_MAX;
-    for(vector<point>::iterator it=mono.begin();it!=mono.end();it++)
+    for(vector<point>::iterator it=mono.begin(); it!=mono.end(); it++)
     {
         point p=*it;
         if(p.y>top.y || (top.y==p.y && p.x<top.x))top=p;
@@ -421,32 +418,32 @@ void triangulate(vector<point>mono)
         point ret=rightChain[r];
 
         if(lef.y>ret.y || ((lef.y==ret.y) &&(lef.x<ret.x)) )
-           {
-               newChain.push_back(lef);
-               l++;
-           }
-           else
-            {
-                newChain.push_back(ret);
-                r++;
-            }
-            while(l==leftChain.size() && newChain.size()!=mono.size())
-            {
-                ret=rightChain[r];
-                newChain.push_back(ret);
-                r++;
-            }
-            while(r==rightChain.size() && newChain.size()!=mono.size())
-            {
-                lef=leftChain[l];
-                newChain.push_back(lef);
-                l++;
-            }
+        {
+            newChain.push_back(lef);
+            l++;
+        }
+        else
+        {
+            newChain.push_back(ret);
+            r++;
+        }
+        while(l==leftChain.size() && newChain.size()!=mono.size())
+        {
+            ret=rightChain[r];
+            newChain.push_back(ret);
+            r++;
+        }
+        while(r==rightChain.size() && newChain.size()!=mono.size())
+        {
+            lef=leftChain[l];
+            newChain.push_back(lef);
+            l++;
+        }
     }
     stack<point>sta;
     sta.push(newChain[0]);
     sta.push(newChain[1]);
-    for(vector<point>::iterator it=newChain.begin()+2;it!=newChain.end()-1;it++)
+    for(vector<point>::iterator it=newChain.begin()+2; it!=newChain.end()-1; it++)
     {
         int same=0,leftside=0;
         point u=*it;
@@ -464,11 +461,10 @@ void triangulate(vector<point>mono)
             vt=find(rightChain.begin(),rightChain.end(),v);
             if(ut!=rightChain.end() && vt!=rightChain.end())same=1;
         }
-        cout<<"u= "<<u.x<<" "<<u.y<<endl;
-        cout<<"v= "<<v.x<<" "<<v.y<<endl;
+
         if(same==1)
         {
-            cout<<sta.size()<<endl;
+
             sta.pop();
             point w=sta.top();
             while((leftside==0 && checkTurn(u,v,w)>0) || (leftside==1 && checkTurn(u,v,w)<0))
@@ -514,7 +510,7 @@ void triangulate(vector<point>mono)
 
 
 }
-int drawaxes;
+int drawaxes,draw1=1,draw2=1;
 
 void drawAxes()
 {
@@ -536,7 +532,21 @@ void drawAxes()
     }
 }
 
+void specialKeyListener(int key, int x,int y)
+{
+    switch(key)
+    {
 
+    case GLUT_KEY_RIGHT:
+
+        draw1=1-draw1;
+        break;
+    case GLUT_KEY_LEFT:
+        draw2=1-draw2;
+
+        break;
+    }
+}
 
 void display()
 {
@@ -620,36 +630,42 @@ void display()
     }
     glEnd();
 
-    for(vector<point>::iterator it=newEdges.begin(); it!=newEdges.end(); it+=2)
+    if(draw1==1)
     {
-        point tr=*it;
-        //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
-        point nx=*(it+1);
-
-        glColor3f(0,1.0,0);
-        glBegin(GL_LINES);
+        for(vector<point>::iterator it=newEdges.begin(); it!=newEdges.end(); it+=2)
         {
-            glVertex3f( nx.x,nx.y,0);
-            glVertex3f(tr.x,tr.y,0);
+            point tr=*it;
+            //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
+            point nx=*(it+1);
 
+            glColor3f(0,1.0,0);
+            glBegin(GL_LINES);
+            {
+                glVertex3f( nx.x,nx.y,0);
+                glVertex3f(tr.x,tr.y,0);
+
+            }
+            glEnd();
         }
-        glEnd();
     }
 
-    for(vector<point>::iterator it=triangles.begin(); it!=triangles.end(); it+=2)
+    if(draw2==1)
     {
-        point tr=*it;
-        //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
-        point nx=*(it+1);
-
-        glColor3f(0,1.0,1.0);
-        glBegin(GL_LINES);
+        for(vector<point>::iterator it=triangles.begin(); it!=triangles.end(); it+=2)
         {
-            glVertex3f( nx.x,nx.y,0);
-            glVertex3f(tr.x,tr.y,0);
+            point tr=*it;
+            //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
+            point nx=*(it+1);
 
+            glColor3f(0,1.0,1.0);
+            glBegin(GL_LINES);
+            {
+                glVertex3f( nx.x,nx.y,0);
+                glVertex3f(tr.x,tr.y,0);
+
+            }
+            glEnd();
         }
-        glEnd();
     }
     drawAxes();
 
@@ -704,15 +720,16 @@ int main(int argc, char **argv)
     sort(sorted.begin(),sorted.end(),compareByY);
     iterate();
     createMonotones();
-    for(vector<vector<point> >::iterator it=polygon.begin();it!=polygon.end();it++)
+    for(vector<vector<point> >::iterator it=polygon.begin(); it!=polygon.end(); it++)
     {
         vector<point>v=*it;
-        for(vector<point>::iterator vt=v.begin();vt!=v.end();vt++)triangulate(v);
-            //cout<<(*vt).x<<" "<<(*vt).y<<endl;
+        for(vector<point>::iterator vt=v.begin(); vt!=v.end(); vt++)triangulate(v);
+        //cout<<(*vt).x<<" "<<(*vt).y<<endl;
         cout<<endl;
-    }cout<<"**** "<<polygon.size()<<endl;
+    }
+    cout<<"**** "<<polygon.size()<<endl;
 
-    for(set<point>::iterator it=T.begin();it!=T.end();it++)         //print
+    for(set<point>::iterator it=T.begin(); it!=T.end(); it++)       //print
     {
         point tr=*it;
         cout<<tr.x<<" "<<tr.y<<" "<<endl;
@@ -731,6 +748,7 @@ int main(int argc, char **argv)
 
     glutDisplayFunc(display);	//display callback function
     glutIdleFunc(animate);		//what you want to do in the idle time (when no drawing is occuring)
+    glutSpecialFunc(specialKeyListener);
 
     glutMainLoop();
 
