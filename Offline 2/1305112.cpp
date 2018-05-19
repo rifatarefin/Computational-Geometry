@@ -19,9 +19,10 @@ struct point
     mutable int helperIndex;
 
 };
-int N;
 set<point>T;
 vector<point>points,sorted,newEdges;
+vector<point>triangles;
+vector<vector<point> >polygon;
 
 point nextPoint(point p)
 {
@@ -292,6 +293,225 @@ void iterate()
     }
 }
 
+void createMonotones()
+{
+    vector<point>current=points;
+    vector<point>upper,lower;
+    for(vector<point>::iterator it=newEdges.begin();it!=newEdges.end();it+=2)
+    {
+        point x2=*it;
+        point x1=*(it+1);
+        point r2=*(find(current.begin(),current.end(),x2));
+        point r1=*(find(current.begin(),current.end(),x1));
+        upper.clear();
+        lower.clear();
+        int i=0;
+        while(true)
+        {
+            int idx;
+            if(r1.order==current.size()-1)idx=0;
+            else idx=r1.order+1;
+            point p=current[idx];
+            r1.order=i;
+            upper.push_back(r1);
+            if(r1==r2)break;
+            r1=p;
+            i++;
+
+        }
+        int flag=0;
+        for(vector<point>::iterator vt=upper.begin()+1;vt!=upper.end()-1;vt++)
+        {
+            point b=*vt;
+            point a=*(vt-1);
+            point c=*(vt+1);
+            if(checkTurn(a,b,c)<0 && ((below(a,b) && below(c,b)) || (below(b,a) && below(b,c))))
+            {
+                flag=1;
+                break;
+            }
+        }
+
+        r2=*(find(current.begin(),current.end(),x2));
+        r1=*(find(current.begin(),current.end(),x1));
+
+        i=0;
+        while(true)
+        {
+            int idx;
+            if(r2.order==current.size()-1)idx=0;
+            else idx=r2.order+1;
+            point p=current[idx];
+            r2.order=i;
+            lower.push_back(r2);
+            if(r1==r2)break;
+            r2=p;
+            i++;
+
+        }
+
+        current.clear();
+        if(flag==0)
+        {
+            polygon.push_back(upper);
+            current=lower;
+        }
+        else
+        {
+            polygon.push_back(lower);
+            current=upper;
+        }
+
+    }
+    polygon.push_back(current);
+}
+
+void triangulate(vector<point>mono)
+{
+    point top,bottom;
+    top.x=INT_MAX;
+    top.y=INT_MIN;
+    bottom.x=INT_MIN;
+    bottom.y=INT_MAX;
+    for(vector<point>::iterator it=mono.begin();it!=mono.end();it++)
+    {
+        point p=*it;
+        if(p.y>top.y || (top.y==p.y && p.x<top.x))top=p;
+        if(p.y<bottom.y || (bottom.y==p.y && p.x>bottom.x))bottom=p;
+    }
+    vector<point>leftChain,rightChain,newChain;
+//    cout<<top.x<<" "<<top.y<<" "<<top.order<<endl;
+//    cout<<bottom.x<<" "<<bottom.y<<" "<<bottom.order<<endl;
+
+    leftChain.push_back(top);
+    point pl=top;
+    while(true)
+    {
+        int idx;
+        if(pl.order==mono.size()-1)idx=0;
+        else idx=pl.order+1;
+        pl=mono[idx];
+        leftChain.push_back(pl);
+        if(pl==bottom)break;
+    }
+//    for(vector<point>::iterator vt=leftChain.begin();vt!=leftChain.end();vt++)
+//            cout<<(*vt).x<<" "<<(*vt).y<<endl;
+    pl=top;
+    while(true)
+    {
+        int idx;
+        if(pl.order==0)idx=mono.size()-1;
+        else idx=pl.order-1;
+        pl=mono[idx];
+        if(pl==bottom)break;
+        rightChain.push_back(pl);
+    }
+//    cout<<endl<<endl;
+//    for(vector<point>::iterator vt=rightChain.begin();vt!=rightChain.end();vt++)
+//            cout<<(*vt).x<<" "<<(*vt).y<<endl;
+
+    int l=0,r=0;
+    if(leftChain.size()==0)newChain=rightChain;
+    else if(rightChain.size()==0)newChain=leftChain;
+    while(newChain.size()!=mono.size())
+    {
+        point lef=leftChain[l];
+        point ret=rightChain[r];
+
+        if(lef.y>ret.y || ((lef.y==ret.y) &&(lef.x<ret.x)) )
+           {
+               newChain.push_back(lef);
+               l++;
+           }
+           else
+            {
+                newChain.push_back(ret);
+                r++;
+            }
+            while(l==leftChain.size() && newChain.size()!=mono.size())
+            {
+                ret=rightChain[r];
+                newChain.push_back(ret);
+                r++;
+            }
+            while(r==rightChain.size() && newChain.size()!=mono.size())
+            {
+                lef=leftChain[l];
+                newChain.push_back(lef);
+                l++;
+            }
+    }
+    stack<point>sta;
+    sta.push(newChain[0]);
+    sta.push(newChain[1]);
+    for(vector<point>::iterator it=newChain.begin()+2;it!=newChain.end()-1;it++)
+    {
+        int same=0,leftside=0;
+        point u=*it;
+        point v=sta.top();
+        vector<point>::iterator ut=find(leftChain.begin(),leftChain.end(),u);
+        vector<point>::iterator vt=find(leftChain.begin(),leftChain.end(),v);
+        if(ut!=leftChain.end() && vt!=leftChain.end())
+        {
+            same=1;
+            leftside=1;
+        }
+        else
+        {
+            ut=find(rightChain.begin(),rightChain.end(),u);
+            vt=find(rightChain.begin(),rightChain.end(),v);
+            if(ut!=rightChain.end() && vt!=rightChain.end())same=1;
+        }
+        cout<<"u= "<<u.x<<" "<<u.y<<endl;
+        cout<<"v= "<<v.x<<" "<<v.y<<endl;
+        if(same==1)
+        {
+            cout<<sta.size()<<endl;
+            sta.pop();
+            point w=sta.top();
+            while((leftside==0 && checkTurn(u,v,w)>0) || (leftside==1 && checkTurn(u,v,w)<0))
+            {
+
+                triangles.push_back(u);
+                triangles.push_back(w);
+                v=w;
+
+                sta.pop();
+                if(sta.size()==0)break;
+                w=sta.top();
+
+            }
+            sta.push(v);
+            sta.push(u);
+        }
+        else
+        {
+            while(sta.size()>1)
+            {
+                point pk=sta.top();
+                triangles.push_back(u);
+                triangles.push_back(pk);
+                sta.pop();
+
+            }
+            sta.pop();
+            sta.push(v);
+            sta.push(u);
+        }
+    }
+    point u=newChain[newChain.size()-1];
+    sta.pop();
+    while(sta.size()>1)
+    {
+        point pk=sta.top();
+        triangles.push_back(u);
+        triangles.push_back(pk);
+        sta.pop();
+
+    }
+
+
+}
 int drawaxes;
 
 void drawAxes()
@@ -404,7 +624,7 @@ void display()
         //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
         point nx=*(it+1);
 
-        glColor3f(0,0,1.0);
+        glColor3f(0,1.0,0);
         glBegin(GL_LINES);
         {
             glVertex3f( nx.x,nx.y,0);
@@ -414,6 +634,21 @@ void display()
         glEnd();
     }
 
+    for(vector<point>::iterator it=triangles.begin(); it!=triangles.end(); it+=2)
+    {
+        point tr=*it;
+        //cout<<tr.x<<" "<<tr.y<<" "<<endl;//tr.angle<<endl;
+        point nx=*(it+1);
+
+        glColor3f(0,1.0,1.0);
+        glBegin(GL_LINES);
+        {
+            glVertex3f( nx.x,nx.y,0);
+            glVertex3f(tr.x,tr.y,0);
+
+        }
+        glEnd();
+    }
     drawAxes();
 
 
@@ -466,9 +701,14 @@ int main(int argc, char **argv)
     sorted=points;
     sort(sorted.begin(),sorted.end(),compareByY);
     iterate();
-
-
-    for(set<point>::iterator it=T.begin();it!=T.end();it++)cout<<(*it).x<<" "<<(*it).y<<endl;
+    createMonotones();
+    for(vector<vector<point> >::iterator it=polygon.begin();it!=polygon.end();it++)
+    {
+        vector<point>v=*it;
+        for(vector<point>::iterator vt=v.begin();vt!=v.end();vt++)triangulate(v);
+            //cout<<(*vt).x<<" "<<(*vt).y<<endl;
+        cout<<endl;
+    }cout<<"**** "<<polygon.size()<<endl;
 
 
 
