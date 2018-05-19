@@ -10,7 +10,7 @@
 #include<GL/glut.h>
 using namespace std;
 #define pi (2*acos(0.0))
-ifstream fin("input2.txt");
+ifstream fin("input5.txt");
 
 struct point
 {
@@ -51,7 +51,7 @@ inline bool operator<(const point& lhs, const point& rhs)
 
     double v2x=nxt.x-rhs.x;
     double v2y=nxt.y-rhs.y;
-    return v1x*v2y-v1y*v2x>0;
+    return v1x*v2y-v1y*v2x>=0;
 
 }
 
@@ -183,6 +183,8 @@ void handleMergeVertex(point v)
     {
         newEdges.push_back(v);
         newEdges.push_back(prehelper);
+        cout<<v.x<<" p "<<v.y<<endl;
+        cout<<prehelper.x<<" p "<<prehelper.y<<endl;
     }
 
 
@@ -196,7 +198,7 @@ void handleMergeVertex(point v)
     {
         newEdges.push_back(v);
         newEdges.push_back(lefthelper);
-        cout<<"dds"<<endl;
+        //cout<<"dds "<<v.x<<" "<<v.y<<" "<<lefthelper.x<<" "<<lefthelper.y<<endl;
     }
     (*xt).helperIndex=v.order;
     vector<point>::iterator vt=find(points.begin(),points.end(),*xt);
@@ -710,7 +712,11 @@ int main(int argc, char **argv)
         cout<<endl;
     }cout<<"**** "<<polygon.size()<<endl;
 
-
+    for(set<point>::iterator it=T.begin();it!=T.end();it++)         //print
+    {
+        point tr=*it;
+        cout<<tr.x<<" "<<tr.y<<" "<<endl;
+    }
 
     glutInit(&argc,argv);
     glutInitWindowSize(500, 500);
