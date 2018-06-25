@@ -4,13 +4,15 @@
 #define MERGE 4
 #define LEFT_REGULAR 5
 #define RIGHT_REGULAR 6
+#define LCHAIN 7
+#define RCHAIN 8
 
 #include<bits/stdc++.h>
 #include<algorithm>
 #include<GL/glut.h>
 using namespace std;
 #define pi (2*acos(0.0))
-ifstream fin("input1.txt");
+ifstream fin("input3.txt");
 
 struct point
 {
@@ -165,7 +167,7 @@ void handleSplitVertex(point &v)
     newEdges.push_back(v);
     newEdges.push_back(helper);
     (*it).helperIndex=v.order;
-
+    points[e.order].helperIndex=v.order;
 
     T.insert(v);
 
@@ -367,6 +369,7 @@ void createMonotones()
 
 void triangulate(vector<point>mono)
 {
+    int chain[mono.size()];
     point top,bottom;
     top.x=INT_MAX;
     top.y=INT_MIN;
@@ -381,7 +384,7 @@ void triangulate(vector<point>mono)
     vector<point>leftChain,rightChain,newChain;
 //    cout<<top.x<<" "<<top.y<<" "<<top.order<<endl;
 //    cout<<bottom.x<<" "<<bottom.y<<" "<<bottom.order<<endl;
-
+    chain[top.order]=LCHAIN;
     leftChain.push_back(top);
     point pl=top;
     while(true)
@@ -391,6 +394,7 @@ void triangulate(vector<point>mono)
         else idx=pl.order+1;
         pl=mono[idx];
         leftChain.push_back(pl);
+        chain[pl.order]=LCHAIN;
         if(pl==bottom)break;
     }
 //    for(vector<point>::iterator vt=leftChain.begin();vt!=leftChain.end();vt++)
@@ -404,6 +408,7 @@ void triangulate(vector<point>mono)
         pl=mono[idx];
         if(pl==bottom)break;
         rightChain.push_back(pl);
+        chain[pl.order]=RCHAIN;
     }
 //    cout<<endl<<endl;
 //    for(vector<point>::iterator vt=rightChain.begin();vt!=rightChain.end();vt++)
@@ -448,18 +453,15 @@ void triangulate(vector<point>mono)
         int same=0,leftside=0;
         point u=*it;
         point v=sta.top();
-        vector<point>::iterator ut=find(leftChain.begin(),leftChain.end(),u);
-        vector<point>::iterator vt=find(leftChain.begin(),leftChain.end(),v);
-        if(ut!=leftChain.end() && vt!=leftChain.end())
+
+        if(chain[u.order]==LCHAIN && chain[v.order]==LCHAIN)
         {
             same=1;
             leftside=1;
         }
-        else
+        else if(chain[u.order]==RCHAIN && chain[v.order]==RCHAIN)
         {
-            ut=find(rightChain.begin(),rightChain.end(),u);
-            vt=find(rightChain.begin(),rightChain.end(),v);
-            if(ut!=rightChain.end() && vt!=rightChain.end())same=1;
+            same=1;
         }
 
         if(same==1)
@@ -736,7 +738,7 @@ int main(int argc, char **argv)
     }
 
     glutInit(&argc,argv);
-    glutInitWindowSize(500, 500);
+    glutInitWindowSize(800, 700);
     glutInitWindowPosition(0, 0);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);	//Depth, Double buffer, RGB color
 
