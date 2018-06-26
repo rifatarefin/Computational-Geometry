@@ -16,7 +16,7 @@ class triangle
 {public:
     point a,b,c;
     int idx;
-    int opp_a=-1,opp_b=-1,opp_c=-1;
+    map<point,int>opp_triangle_idx;
     int child1=-1,child2=-1,child3=-1;
     triangle(point x, point y, point z, int order)
     {
@@ -24,6 +24,10 @@ class triangle
         b=y;
         c=z;
         idx=order;
+       // opp_triangle_idx.clear();
+        opp_triangle_idx[a]=-1;
+        opp_triangle_idx[b]=-1;
+        opp_triangle_idx[c]=-1;
     }
 };
 
@@ -32,18 +36,7 @@ point p0= {-15,15};
 point p1= {0,-30};
 point p2= {15,15};
 
-//class T
-//{
-//public:
-//    triangle core;
-//    //point aprime={XX,XX},bprime={XX,XX},cprime={XX,XX};
-//    triangle atr=nullTr,btr=nullTr,ctr=nullTr;
-//
-//    T(point a, point b, point c)
-//    {
-//        core= {a,b,c};
-//    }
-//};
+
 
 vector<triangle>trlist;
 vector<point>points;
@@ -53,7 +46,6 @@ void printTriangle(triangle x)
     cout<<x.a.x<<" "<<x.a.y<<"\n";
     cout<<x.b.x<<" "<<x.b.y<<"\n";
     cout<<x.c.x<<" "<<x.c.y<<"\n";
-    cout<<x.opp_a<<" "<<x.opp_b<<" "<<x.opp_c<<"\n"<<x.idx<<"\n\n";
 }
 
 inline bool operator==(const point& lhs, const point& rhs)
@@ -71,7 +63,10 @@ inline bool operator==(const triangle& lhs, const triangle& rhs)
     return lhs.a==rhs.a && lhs.b==rhs.b && lhs.c==rhs.c ;
 }
 
-
+inline bool operator<(const point& lhs, const point& rhs)
+{
+    return lhs.x < rhs.x || ((lhs.x == rhs.x)&&(lhs.y<rhs.y));
+}
 bool compareByY(const point &a, const point &b)
 {
     return (a.y > b.y) ||((a.y==b.y) && (a.x<b.x));
@@ -99,6 +94,10 @@ bool below(point a, point b)        //a below b
 {
     return a.y<b.y || (a.y==b.y && a.x>b.x);
 }
+double dist(point a,point b)
+{
+    return (a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y);
+}
 
 double checkTurn(point a, point b, point c)
 {
@@ -119,23 +118,11 @@ int position(triangle t, point p)
 
 }
 
-void update_opposite(triangle t1, int t2)
+point getOppositePoint(triangle tr,point pr)
 {
-    if(t2==-1)return;
-    cout<<"ttttt2"<<t2<<endl;
-    triangle tmp=trlist[t2];
-    if(tmp.a!=t1.a && tmp.a!=t1.b && tmp.a!=t1.c)tmp.opp_a=t1.idx;
-    else if(tmp.b!=t1.a && tmp.b!=t1.b && tmp.b!=t1.c)tmp.opp_b=t1.idx;
-    else if(tmp.c!=t1.a && tmp.c!=t1.b && tmp.c!=t1.c)tmp.opp_c=t1.idx;
-    trlist[t2]=tmp;
-}
+    triangle *tmp;
+    tmp=&trlist[tr.opp_triangle_idx[pr]];
 
-point getOpposite(triangle tr,point pr)
-{
-    triangle *tmp=nullptr;
-    if(pr==tr.a)*tmp=trlist[tr.opp_a];
-    else if(pr==tr.b)*tmp=trlist[tr.opp_b];
-    else if(pr==tr.c)*tmp=trlist[tr.opp_c];
 
     point p;
     if(tmp->a!=tr.a && tmp->a!=tr.b && tmp->a!=tr.c)p=tmp->a;
@@ -144,6 +131,76 @@ point getOpposite(triangle tr,point pr)
     return p;
 }
 
+
+//{
+void lineFromPoints(point P, point Q, double &a,
+                        double &b, double &c)
+{
+    a = Q.y - P.y;
+    b = P.x - Q.x;
+    c = a*(P.x)+ b*(P.y);
+}
+
+void perpendicularBisectorFromLine(point P, point Q,
+                 double &a, double &b, double &c)
+{
+    point mid_point = {(P.x + Q.x)/2,
+                            (P.y + Q.y)/2};
+
+    // c = -bx + ay
+    c = -b*(mid_point.x) + a*(mid_point.y);
+
+    double temp = a;
+    a = -b;
+    b = temp;
+}
+
+point lineLineIntersection(double a1, double b1, double c1,
+                         double a2, double b2, double c2)
+{
+    double determinant = a1*b2 - a2*b1;
+    point a;
+    if (determinant == 0)
+    {
+        // The lines are parallel. This is simplified
+        // by returning a pair of FLT_MAX
+
+        return a={FLT_MAX, FLT_MAX};
+    }
+
+    else
+    {
+        double x = (b2*c1 - b1*c2)/determinant;
+        double y = (a1*c2 - a2*c1)/determinant;
+        return a={x, y};
+    }
+}
+
+point findCircumCenter(point P, point Q, point R)
+{
+    // Line PQ is represented as ax + by = c
+    double a, b, c;
+    lineFromPoints(P, Q, a, b, c);
+
+    // Line QR is represented as ex + fy = g
+    double e, f, g;
+    lineFromPoints(Q, R, e, f, g);
+
+    // Converting lines PQ and QR to perpendicular
+    // vbisectors. After this, L = ax + by = c
+    // M = ex + fy = g
+    perpendicularBisectorFromLine(P, Q, a, b, c);
+    perpendicularBisectorFromLine(Q, R, e, f, g);
+
+    // The point of intersection of L and M gives
+    // the circumcenter
+    point circumcenter =
+           lineLineIntersection(a, b, c, e, f, g);
+    return circumcenter;
+
+
+}
+//}
 bool checkIllegal(triangle tr, point k)    //true=illegal
 {
 
@@ -164,17 +221,117 @@ bool checkIllegal(triangle tr, point k)    //true=illegal
         i=tr.a;
         j=tr.b;
     }
-    if((i==p0 || i==p1 || i==p2) &&(j==p0 || j==p1 || j==p2))return false;
+    if((i==p0 || i==p1 || i==p2) &&(j==p0 || j==p1 || j==p2))return false; //false=legal
 
-    point l=getOpposite(tr,k);
+    point l=getOppositePoint(tr,k);
+    if((i==p0 || i==p1 || i==p2) || (j==p0 || j==p1 || j==p2) || (k==p0 || k==p1 || k==p2) || (l==p0 || l==p1 || l==p2))
+    {
+        if((k==p0 || k==p1 || k==p2) || (l==p0 || l==p1 || l==p2))return false;
+        else return true;
+    }
 
+    point center=findCircumCenter(tr.a,tr.b,tr.c);
+    if(dist(center,l)<dist(center,tr.a))return true;
+    return false;
+    //return true;////
 }
+
+void update_opposite(triangle t1, int t2)
+{
+    if(t2==-1)
+    {
+        cout<<"nnnn "<<t2<<endl;
+        return;
+    }
+    cout<<"ttttt2 "<<t2<<endl;
+    triangle tmp=trlist[t2];
+    if(tmp.a!=t1.a && tmp.a!=t1.b && tmp.a!=t1.c)tmp.opp_triangle_idx[tmp.a]=t1.idx;
+    else if(tmp.b!=t1.a && tmp.b!=t1.b && tmp.b!=t1.c)tmp.opp_triangle_idx[tmp.b]=t1.idx;
+    else if(tmp.c!=t1.a && tmp.c!=t1.b && tmp.c!=t1.c)tmp.opp_triangle_idx[tmp.c]=t1.idx;
+    trlist[t2]=tmp;
+}
+
 void legalize(triangle tr, point k)
 {
+    if(checkIllegal(tr,k)==false)return;
+    point l=getOppositePoint(tr,k);
 
+    triangle tr2=trlist[tr.opp_triangle_idx[k]];
+    int len=trlist.size();
+    triangle *t1;
+    triangle *t2;
 
+    if(k==tr.a)
+    {
+        t1=new triangle(tr.a,l,tr.c,len);
+        t2=new triangle(tr.a,tr.b,l,len+1);
+        (*t1).opp_triangle_idx[t1->b]=tr.opp_triangle_idx[tr.b];
+        (*t1).opp_triangle_idx[t1->c]=t2->idx;
+        (*t1).opp_triangle_idx[t1->a]=tr2.opp_triangle_idx[tr.b];
+
+        (*t2).opp_triangle_idx[t2->b]=t1->idx;
+        (*t2).opp_triangle_idx[t2->c]=tr.opp_triangle_idx[tr.c];
+        (*t2).opp_triangle_idx[t2->a]=tr2.opp_triangle_idx[tr.c];
+
+        update_opposite(*t1,tr.opp_triangle_idx[tr.b]);
+        update_opposite(*t2,tr.opp_triangle_idx[tr.c]);
+
+        update_opposite(*t1,tr2.opp_triangle_idx[tr.b]);
+        update_opposite(*t2,tr2.opp_triangle_idx[tr.c]);
+
+    }
+    else if(k==tr.b)
+    {
+        t1=new triangle(tr.b,l,tr.a,len);
+        t2=new triangle(tr.b,tr.c,l,len+1);
+        (*t1).opp_triangle_idx[t1->b]=tr.opp_triangle_idx[tr.c];
+        (*t1).opp_triangle_idx[t1->c]=t2->idx;
+        (*t1).opp_triangle_idx[t1->a]=tr2.opp_triangle_idx[tr.c];
+
+        (*t2).opp_triangle_idx[t2->b]=t1->idx;
+        (*t2).opp_triangle_idx[t2->c]=tr.opp_triangle_idx[tr.a];
+        (*t2).opp_triangle_idx[t2->a]=tr2.opp_triangle_idx[tr.a];
+
+        update_opposite(*t1,tr.opp_triangle_idx[tr.c]);
+        update_opposite(*t2,tr.opp_triangle_idx[tr.a]);
+
+        update_opposite(*t1,tr2.opp_triangle_idx[tr.c]);
+        update_opposite(*t2,tr2.opp_triangle_idx[tr.a]);
+
+    }
+    else
+    {
+        t1=new triangle(tr.c,l,tr.b,len);
+        t2=new triangle(tr.c,tr.a,l,len+1);
+        (*t1).opp_triangle_idx[t1->b]=tr.opp_triangle_idx[tr.a];
+        (*t1).opp_triangle_idx[t1->c]=t2->idx;
+        (*t1).opp_triangle_idx[t1->a]=tr2.opp_triangle_idx[tr.a];
+
+        (*t2).opp_triangle_idx[t2->b]=t1->idx;
+        (*t2).opp_triangle_idx[t2->c]=tr.opp_triangle_idx[tr.b];
+        (*t2).opp_triangle_idx[t2->a]=tr2.opp_triangle_idx[tr.b];
+
+        update_opposite(*t1,tr.opp_triangle_idx[tr.a]);
+        update_opposite(*t2,tr.opp_triangle_idx[tr.b]);
+
+        update_opposite(*t1,tr2.opp_triangle_idx[tr.a]);
+        update_opposite(*t2,tr2.opp_triangle_idx[tr.b]);
+    }
+
+    trlist[tr.idx].child1=len;
+    trlist[tr.idx].child2=len+1;
+
+    trlist[tr2.idx].child1=len;
+    trlist[tr2.idx].child2=len+1;
+
+    trlist.push_back(*t1);
+    trlist.push_back(*t2);
+
+    legalize(*t1,(*t1).a);
+    legalize(*t2,(*t2).a);
     //checkIllegal(i,j,zr)
 }
+
 void splitA(triangle t0, point z1)
 {
     int len=trlist.size();
@@ -182,20 +339,20 @@ void splitA(triangle t0, point z1)
     triangle t2(t0.b,t0.c,z1,len+1);
     triangle t3(t0.c,t0.a,z1,len+2);
 
-    t1.opp_a=t2.idx;
-    t1.opp_b=t3.idx;
-    t1.opp_c=t0.opp_c;
-    update_opposite(t1,t0.opp_c);
+    t1.opp_triangle_idx[t1.a]=t2.idx;
+    t1.opp_triangle_idx[t1.b]=t3.idx;
+    t1.opp_triangle_idx[t1.c]=t0.opp_triangle_idx[t0.c];
+    update_opposite(t1,t0.opp_triangle_idx[t0.c]);
 
-    t2.opp_a=t3.idx;
-    t2.opp_b=t1.idx;
-    t2.opp_c=t0.opp_a;
-    update_opposite(t2,t0.opp_a);
+    t2.opp_triangle_idx[t2.a]=t3.idx;
+    t2.opp_triangle_idx[t2.b]=t1.idx;
+    t2.opp_triangle_idx[t2.c]=t0.opp_triangle_idx[t0.a];
+    update_opposite(t2,t0.opp_triangle_idx[t0.a]);
 
-    t3.opp_a=t1.idx;
-    t3.opp_b=t2.idx;
-    t3.opp_c=t0.opp_b;
-    update_opposite(t3,t0.opp_b);
+    t3.opp_triangle_idx[t3.a]=t1.idx;
+    t3.opp_triangle_idx[t3.b]=t2.idx;
+    t3.opp_triangle_idx[t3.c]=t0.opp_triangle_idx[t0.b];
+    update_opposite(t3,t0.opp_triangle_idx[t0.b]);
 
     trlist[t0.idx].child1=len;
     trlist[t0.idx].child2=len+1;
@@ -203,6 +360,9 @@ void splitA(triangle t0, point z1)
     trlist.push_back(t1);
     trlist.push_back(t2);
     trlist.push_back(t3);
+    legalize(t1,z1);
+    legalize(t2,z1);
+    legalize(t3,z1);
     //Tlist.erase(remove(Tlist.begin(),Tlist.end(),t0),Tlist.end());
 //    vector<T>::iterator it=find(Tlist.begin(),Tlist.end(),t0);
 //    if(it!=Tlist.end())Tlist.erase(it);
@@ -312,6 +472,9 @@ void display()
 
             triangle t=(*it);
             if(t.child1!=-1)continue;
+            if(t.a==p0 || t.b==p0 || t.c==p0)continue;
+            else if(t.a==p1 || t.b==p1 || t.c==p1)continue;
+            else if(t.a==p2 || t.b==p2 || t.c==p2)continue;
             glColor3f(1.0,0,0);
         glBegin(GL_LINES);
         {
@@ -418,9 +581,13 @@ int main(int argc, char **argv)
             triangle t=(*it);
             if(t.child1!=-1)continue;
             printTriangle(t);
-            if(t.opp_a!=-1)printTriangle(trlist[t.opp_a]);
-            if(t.opp_b!=-1)printTriangle(trlist[t.opp_b]);
-            if(t.opp_c!=-1)printTriangle(trlist[t.opp_c]);
+//            triangle *tmp=getOppositeTriangle(t,t.a);
+//            printTriangle(*tmp);
+            cout<<checkIllegal(t,t.a)<<endl;
+//            if(t.opp_triangle_idx[t.a]!=-1)printTriangle(trlist[t.opp_triangle_idx[t.a]]);
+//            if(t.opp_triangle_idx[t.b]!=-1)printTriangle(trlist[t.opp_triangle_idx[t.b]]);
+//            if(t.opp_triangle_idx[t.c]!=-1)printTriangle(trlist[t.opp_triangle_idx[t.c]]);
+
             cout<<"*****\n";
 
         }
