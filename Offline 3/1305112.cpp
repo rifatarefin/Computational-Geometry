@@ -226,9 +226,11 @@ bool checkIllegal(triangle tr, point k)    //true=illegal
     point l=getOppositePoint(tr,k);
     if((i==p0 || i==p1 || i==p2) || (j==p0 || j==p1 || j==p2) || (k==p0 || k==p1 || k==p2) || (l==p0 || l==p1 || l==p2))
     {
+        //cout<<l.x<<" "<<l.y<<endl;
         if((k==p0 || k==p1 || k==p2) || (l==p0 || l==p1 || l==p2))return false;
         else return true;
     }
+
 
     point center=findCircumCenter(tr.a,tr.b,tr.c);
     if(dist(center,l)<dist(center,tr.a))return true;
@@ -240,10 +242,10 @@ void update_opposite(triangle t1, int t2)
 {
     if(t2==-1)
     {
-        cout<<"nnnn "<<t2<<endl;
+
         return;
     }
-    cout<<"ttttt2 "<<t2<<endl;
+
     triangle tmp=trlist[t2];
     if(tmp.a!=t1.a && tmp.a!=t1.b && tmp.a!=t1.c)tmp.opp_triangle_idx[tmp.a]=t1.idx;
     else if(tmp.b!=t1.a && tmp.b!=t1.b && tmp.b!=t1.c)tmp.opp_triangle_idx[tmp.b]=t1.idx;
@@ -251,72 +253,63 @@ void update_opposite(triangle t1, int t2)
     trlist[t2]=tmp;
 }
 
-void legalize(triangle tr, point k)
+void legalize(triangle tr, point pr)
 {
-    if(checkIllegal(tr,k)==false)return;
-    point l=getOppositePoint(tr,k);
+    if(checkIllegal(tr,pr)==false)return;
+    cout<<"legalizing "<<pr.x<<" "<<pr.y<<endl;
+    printTriangle(tr);
+    point f,g,h;
+    f=getOppositePoint(tr,tr.a);
+    g=getOppositePoint(tr,tr.b);
+    h=getOppositePoint(tr,tr.c);
+    cout<<"opposite"<<endl;
+    cout<<f.x<<" "<<f.y<<endl;
+    cout<<g.x<<" "<<g.y<<endl;
+    cout<<h.x<<" "<<h.y<<endl;
 
-    triangle tr2=trlist[tr.opp_triangle_idx[k]];
+
+
+    point l=getOppositePoint(tr,pr);
+
+    triangle tr2=trlist[tr.opp_triangle_idx[pr]];
+    point i,j,k;
+
+    if(pr==tr.a)
+    {
+        i=tr.b;
+        j=tr.c;
+        k=tr.a;
+    }
+    else if(pr==tr.b)
+    {
+        i=tr.c;
+        j=tr.a;
+        k=tr.b;
+    }
+    else if(pr==tr.c)
+    {
+        i=tr.a;
+        j=tr.b;
+        k=tr.c;
+    }
+
     int len=trlist.size();
-    triangle *t1;
-    triangle *t2;
+    triangle t1(k,l,j,len);
+    triangle t2(k,i,l,len+1);
 
-    if(k==tr.a)
-    {
-        t1=new triangle(tr.a,l,tr.c,len);
-        t2=new triangle(tr.a,tr.b,l,len+1);
-        (*t1).opp_triangle_idx[t1->b]=tr.opp_triangle_idx[tr.b];
-        (*t1).opp_triangle_idx[t1->c]=t2->idx;
-        (*t1).opp_triangle_idx[t1->a]=tr2.opp_triangle_idx[tr.b];
+    t1.opp_triangle_idx[l]=tr.opp_triangle_idx[i];
+    t1.opp_triangle_idx[j]=t2.idx;
+    t1.opp_triangle_idx[k]=tr2.opp_triangle_idx[i];
 
-        (*t2).opp_triangle_idx[t2->b]=t1->idx;
-        (*t2).opp_triangle_idx[t2->c]=tr.opp_triangle_idx[tr.c];
-        (*t2).opp_triangle_idx[t2->a]=tr2.opp_triangle_idx[tr.c];
+    update_opposite(t1,tr.opp_triangle_idx[i]);
+    update_opposite(t1,tr2.opp_triangle_idx[i]);
 
-        update_opposite(*t1,tr.opp_triangle_idx[tr.b]);
-        update_opposite(*t2,tr.opp_triangle_idx[tr.c]);
+    t2.opp_triangle_idx[i]=t1.idx;
+    t2.opp_triangle_idx[l]=tr.opp_triangle_idx[j];
+    t2.opp_triangle_idx[k]=tr2.opp_triangle_idx[j];
 
-        update_opposite(*t1,tr2.opp_triangle_idx[tr.b]);
-        update_opposite(*t2,tr2.opp_triangle_idx[tr.c]);
-
-    }
-    else if(k==tr.b)
-    {
-        t1=new triangle(tr.b,l,tr.a,len);
-        t2=new triangle(tr.b,tr.c,l,len+1);
-        (*t1).opp_triangle_idx[t1->b]=tr.opp_triangle_idx[tr.c];
-        (*t1).opp_triangle_idx[t1->c]=t2->idx;
-        (*t1).opp_triangle_idx[t1->a]=tr2.opp_triangle_idx[tr.c];
-
-        (*t2).opp_triangle_idx[t2->b]=t1->idx;
-        (*t2).opp_triangle_idx[t2->c]=tr.opp_triangle_idx[tr.a];
-        (*t2).opp_triangle_idx[t2->a]=tr2.opp_triangle_idx[tr.a];
-
-        update_opposite(*t1,tr.opp_triangle_idx[tr.c]);
-        update_opposite(*t2,tr.opp_triangle_idx[tr.a]);
-
-        update_opposite(*t1,tr2.opp_triangle_idx[tr.c]);
-        update_opposite(*t2,tr2.opp_triangle_idx[tr.a]);
-
-    }
-    else
-    {
-        t1=new triangle(tr.c,l,tr.b,len);
-        t2=new triangle(tr.c,tr.a,l,len+1);
-        (*t1).opp_triangle_idx[t1->b]=tr.opp_triangle_idx[tr.a];
-        (*t1).opp_triangle_idx[t1->c]=t2->idx;
-        (*t1).opp_triangle_idx[t1->a]=tr2.opp_triangle_idx[tr.a];
-
-        (*t2).opp_triangle_idx[t2->b]=t1->idx;
-        (*t2).opp_triangle_idx[t2->c]=tr.opp_triangle_idx[tr.b];
-        (*t2).opp_triangle_idx[t2->a]=tr2.opp_triangle_idx[tr.b];
-
-        update_opposite(*t1,tr.opp_triangle_idx[tr.a]);
-        update_opposite(*t2,tr.opp_triangle_idx[tr.b]);
-
-        update_opposite(*t1,tr2.opp_triangle_idx[tr.a]);
-        update_opposite(*t2,tr2.opp_triangle_idx[tr.b]);
-    }
+    update_opposite(t2,tr.opp_triangle_idx[j]);
+    update_opposite(t2,tr2.opp_triangle_idx[j]);
 
     trlist[tr.idx].child1=len;
     trlist[tr.idx].child2=len+1;
@@ -324,11 +317,11 @@ void legalize(triangle tr, point k)
     trlist[tr2.idx].child1=len;
     trlist[tr2.idx].child2=len+1;
 
-    trlist.push_back(*t1);
-    trlist.push_back(*t2);
+    trlist.push_back(t1);
+    trlist.push_back(t2);
 
-    legalize(*t1,(*t1).a);
-    legalize(*t2,(*t2).a);
+    legalize(trlist[t1.idx],k);
+    legalize(trlist[t2.idx],k);
     //checkIllegal(i,j,zr)
 }
 
@@ -360,15 +353,85 @@ void splitA(triangle t0, point z1)
     trlist.push_back(t1);
     trlist.push_back(t2);
     trlist.push_back(t3);
-    legalize(t1,z1);
-    legalize(t2,z1);
-    legalize(t3,z1);
+    legalize(trlist[t1.idx],z1);
+    legalize(trlist[t2.idx],z1);
+    legalize(trlist[t3.idx],z1);
     //Tlist.erase(remove(Tlist.begin(),Tlist.end(),t0),Tlist.end());
 //    vector<T>::iterator it=find(Tlist.begin(),Tlist.end(),t0);
 //    if(it!=Tlist.end())Tlist.erase(it);
 }
 
+void splitB(triangle tr,point pr)
+{
+    point i,j,k,l;
+    if(checkTurn(tr.a,tr.b,pr)==0)
+    {
+        i=tr.a;
+        j=tr.b;
+        k=tr.c;
+    }
+    else if(checkTurn(tr.b,tr.c,pr)==0)
+    {
+        i=tr.b;
+        j=tr.c;
+        k=tr.a;
+    }
+    else if(checkTurn(tr.c,tr.a,pr)==0)
+    {
+        i=tr.c;
+        j=tr.a;
+        k=tr.b;
+    }
+    l=getOppositePoint(tr,k);
+    triangle tr2=trlist[tr.opp_triangle_idx[k]];
+    int len=trlist.size();
+    triangle t1(k,pr,j,len);
+    triangle t2(k,i,pr,len+1);
+    triangle t3(pr,l,j,len+2);
+    triangle t4(pr,i,l,len+3);
 
+    t1.opp_triangle_idx[k]=t3.idx;
+    t1.opp_triangle_idx[j]=t2.idx;
+    t1.opp_triangle_idx[pr]=tr.opp_triangle_idx[i];
+    update_opposite(t1,tr.opp_triangle_idx[i]);
+
+    t2.opp_triangle_idx[k]=t4.idx;
+    t2.opp_triangle_idx[i]=t1.idx;
+    t2.opp_triangle_idx[pr]=tr.opp_triangle_idx[j];
+    update_opposite(t2,tr.opp_triangle_idx[j]);
+
+    t3.opp_triangle_idx[j]=t4.idx;
+    t3.opp_triangle_idx[l]=t1.idx;
+    t3.opp_triangle_idx[pr]=tr2.opp_triangle_idx[i];
+    update_opposite(t3,tr2.opp_triangle_idx[i]);
+
+    t4.opp_triangle_idx[l]=t2.idx;
+    t4.opp_triangle_idx[i]=t3.idx;
+    t4.opp_triangle_idx[pr]=tr2.opp_triangle_idx[j];
+    update_opposite(t4,tr2.opp_triangle_idx[j]);
+
+    trlist[tr.idx].child1=len;
+    trlist[tr.idx].child2=len+1;
+    trlist[tr2.idx].child1=len+2;
+    trlist[tr2.idx].child2=len+4;
+    trlist.push_back(t1);
+    trlist.push_back(t2);
+    trlist.push_back(t3);
+    trlist.push_back(t4);
+
+
+
+//    printTriangle(t1);
+//    printTriangle(t2);
+//    printTriangle(t3);
+//    printTriangle(t4);
+//    cout<<checkIllegal(t1,pr)<<endl;
+    legalize(trlist[t1.idx],pr);
+    legalize(trlist[t2.idx],pr);
+    legalize(trlist[t3.idx],pr);
+    legalize(trlist[t4.idx],pr);
+
+}
 
 //{
 
@@ -472,9 +535,9 @@ void display()
 
             triangle t=(*it);
             if(t.child1!=-1)continue;
-            if(t.a==p0 || t.b==p0 || t.c==p0)continue;
-            else if(t.a==p1 || t.b==p1 || t.c==p1)continue;
-            else if(t.a==p2 || t.b==p2 || t.c==p2)continue;
+//            if(t.a==p0 || t.b==p0 || t.c==p0)continue;
+//            else if(t.a==p1 || t.b==p1 || t.c==p1)continue;
+//            else if(t.a==p2 || t.b==p2 || t.c==p2)continue;
             glColor3f(1.0,0,0);
         glBegin(GL_LINES);
         {
@@ -570,6 +633,15 @@ int main(int argc, char **argv)
                 splitA(t,z1);
                 break;
             }
+            else if(position(t,z1)==2)
+            {
+//                printTriangle(t);
+//                printTriangle(trlist[t.opp_triangle_idx[t.a]]);
+//                printTriangle(trlist[t.opp_triangle_idx[t.b]]);
+//                printTriangle(trlist[t.opp_triangle_idx[t.c]]);
+                splitB(t,z1);
+                break;
+            }
 
         }
 
@@ -580,10 +652,15 @@ int main(int argc, char **argv)
 
             triangle t=(*it);
             if(t.child1!=-1)continue;
-            printTriangle(t);
-//            triangle *tmp=getOppositeTriangle(t,t.a);
-//            printTriangle(*tmp);
-            cout<<checkIllegal(t,t.a)<<endl;
+//            printTriangle(t);
+//            cout<<"opposite"<<endl;
+//            point f,g,h;
+//            f=getOppositePoint(t,t.a);
+//            g=getOppositePoint(t,t.b);
+//            h=getOppositePoint(t,t.c);
+//            cout<<f.x<<" "<<f.y<<endl;
+//            cout<<g.x<<" "<<g.y<<endl;
+//            cout<<h.x<<" "<<h.y<<endl;
 //            if(t.opp_triangle_idx[t.a]!=-1)printTriangle(trlist[t.opp_triangle_idx[t.a]]);
 //            if(t.opp_triangle_idx[t.b]!=-1)printTriangle(trlist[t.opp_triangle_idx[t.b]]);
 //            if(t.opp_triangle_idx[t.c]!=-1)printTriangle(trlist[t.opp_triangle_idx[t.c]]);
