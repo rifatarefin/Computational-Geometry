@@ -4,7 +4,7 @@
 #include<GL/glut.h>
 using namespace std;
 #define pi (2*acos(0.0))
-ifstream fin("input1.txt");
+ifstream fin("input2.txt");
 
 struct point
 {
@@ -13,28 +13,30 @@ struct point
 };
 
 class triangle
-{public:
+{
+public:
     point a,b,c;
     int idx;
     map<point,int>opp_triangle_idx;
     int child1=-1,child2=-1,child3=-1;
+    point center;
     triangle(point x, point y, point z, int order)
     {
         a=x;
         b=y;
         c=z;
         idx=order;
-       // opp_triangle_idx.clear();
+        // opp_triangle_idx.clear();
         opp_triangle_idx[a]=-1;
         opp_triangle_idx[b]=-1;
         opp_triangle_idx[c]=-1;
     }
 };
 
-triangle tri_null({XX,XX},{XX,XX},{XX,XX},-1);
-point p0= {-15,15};
-point p1= {0,-30};
-point p2= {15,15};
+triangle tri_null({XX,XX}, {XX,XX}, {XX,XX},-1);
+point p0= {-1500,1500};
+point p1= {0,-3000};
+point p2= {1500,1500};
 
 
 
@@ -58,18 +60,10 @@ inline bool operator!=(const point& lhs, const point& rhs)
     return lhs.x != rhs.x  || lhs.y!=rhs.y ;
 }
 
-inline bool operator==(const triangle& lhs, const triangle& rhs)
-{
-    return lhs.a==rhs.a && lhs.b==rhs.b && lhs.c==rhs.c ;
-}
 
 inline bool operator<(const point& lhs, const point& rhs)
 {
     return lhs.x < rhs.x || ((lhs.x == rhs.x)&&(lhs.y<rhs.y));
-}
-bool compareByY(const point &a, const point &b)
-{
-    return (a.y > b.y) ||((a.y==b.y) && (a.x<b.x));
 }
 
 
@@ -90,10 +84,7 @@ void input()
     }
 }
 
-bool below(point a, point b)        //a below b
-{
-    return a.y<b.y || (a.y==b.y && a.x>b.x);
-}
+
 double dist(point a,point b)
 {
     return (a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y);
@@ -134,7 +125,7 @@ point getOppositePoint(triangle tr,point pr)
 
 //{
 void lineFromPoints(point P, point Q, double &a,
-                        double &b, double &c)
+                    double &b, double &c)
 {
     a = Q.y - P.y;
     b = P.x - Q.x;
@@ -142,10 +133,11 @@ void lineFromPoints(point P, point Q, double &a,
 }
 
 void perpendicularBisectorFromLine(point P, point Q,
-                 double &a, double &b, double &c)
+                                   double &a, double &b, double &c)
 {
     point mid_point = {(P.x + Q.x)/2,
-                            (P.y + Q.y)/2};
+                       (P.y + Q.y)/2
+                      };
 
     // c = -bx + ay
     c = -b*(mid_point.x) + a*(mid_point.y);
@@ -156,7 +148,7 @@ void perpendicularBisectorFromLine(point P, point Q,
 }
 
 point lineLineIntersection(double a1, double b1, double c1,
-                         double a2, double b2, double c2)
+                           double a2, double b2, double c2)
 {
     double determinant = a1*b2 - a2*b1;
     point a;
@@ -165,14 +157,14 @@ point lineLineIntersection(double a1, double b1, double c1,
         // The lines are parallel. This is simplified
         // by returning a pair of FLT_MAX
 
-        return a={FLT_MAX, FLT_MAX};
+        return a= {FLT_MAX, FLT_MAX};
     }
 
     else
     {
         double x = (b2*c1 - b1*c2)/determinant;
         double y = (a1*c2 - a2*c1)/determinant;
-        return a={x, y};
+        return a= {x, y};
     }
 }
 
@@ -195,7 +187,7 @@ point findCircumCenter(point P, point Q, point R)
     // The point of intersection of L and M gives
     // the circumcenter
     point circumcenter =
-           lineLineIntersection(a, b, c, e, f, g);
+        lineLineIntersection(a, b, c, e, f, g);
     return circumcenter;
 
 
@@ -228,7 +220,9 @@ bool checkIllegal(triangle tr, point k)    //true=illegal
     {
         //cout<<l.x<<" "<<l.y<<endl;
         if((k==p0 || k==p1 || k==p2) || (l==p0 || l==p1 || l==p2))return false;
-        else return true;
+        point center=findCircumCenter(tr.a,tr.b,tr.c);
+        if(dist(center,l)>=dist(center,tr.a))return false;
+        return true;
     }
 
 
@@ -256,16 +250,16 @@ void update_opposite(triangle t1, int t2)
 void legalize(triangle tr, point pr)
 {
     if(checkIllegal(tr,pr)==false)return;
-    cout<<"legalizing "<<pr.x<<" "<<pr.y<<endl;
-    printTriangle(tr);
-    point f,g,h;
-    f=getOppositePoint(tr,tr.a);
-    g=getOppositePoint(tr,tr.b);
-    h=getOppositePoint(tr,tr.c);
-    cout<<"opposite"<<endl;
-    cout<<f.x<<" "<<f.y<<endl;
-    cout<<g.x<<" "<<g.y<<endl;
-    cout<<h.x<<" "<<h.y<<endl;
+//    cout<<"legalizing "<<pr.x<<" "<<pr.y<<endl;
+//    printTriangle(tr);
+//    point f,g,h;
+//    f=getOppositePoint(tr,tr.a);
+//    g=getOppositePoint(tr,tr.b);
+//    h=getOppositePoint(tr,tr.c);
+//    cout<<"opposite"<<endl;
+//    cout<<f.x<<" "<<f.y<<endl;
+//    cout<<g.x<<" "<<g.y<<endl;
+//    cout<<h.x<<" "<<h.y<<endl;
 
 
 
@@ -435,6 +429,13 @@ void splitB(triangle tr,point pr)
 
 //{
 
+bool containCorner(triangle t)
+{
+    if(t.a==p0 || t.b==p0 || t.c==p0)return true;
+    else if(t.a==p1 || t.b==p1 || t.c==p1)return true;
+    else if(t.a==p2 || t.b==p2 || t.c==p2)return true;
+    return false;
+}
 int drawaxes,draw1=1,draw2=1;
 
 void drawAxes()
@@ -468,6 +469,9 @@ void specialKeyListener(int key, int x,int y)
         break;
     case GLUT_KEY_LEFT:
         draw2=1-draw2;
+        break;
+    case GLUT_KEY_DOWN:
+        drawaxes=1-drawaxes;
 
         break;
     }
@@ -535,123 +539,204 @@ void display()
 
             triangle t=(*it);
             if(t.child1!=-1)continue;
-//            if(t.a==p0 || t.b==p0 || t.c==p0)continue;
-//            else if(t.a==p1 || t.b==p1 || t.c==p1)continue;
-//            else if(t.a==p2 || t.b==p2 || t.c==p2)continue;
+            if(t.a==p0 || t.b==p0 || t.c==p0)continue;
+            else if(t.a==p1 || t.b==p1 || t.c==p1)continue;
+            else if(t.a==p2 || t.b==p2 || t.c==p2)continue;
             glColor3f(1.0,0,0);
-        glBegin(GL_LINES);
-        {
-            glVertex3f( t.a.x,t.a.y,0);
-            glVertex3f(t.b.x,t.b.y,0);
+            glBegin(GL_LINES);
+            {
+                glVertex3f( t.a.x,t.a.y,0);
+                glVertex3f(t.b.x,t.b.y,0);
 
-            glVertex3f( t.b.x,t.b.y,0);
-            glVertex3f(t.c.x,t.c.y,0);
+                glVertex3f( t.b.x,t.b.y,0);
+                glVertex3f(t.c.x,t.c.y,0);
 
-            glVertex3f( t.c.x,t.c.y,0);
-            glVertex3f(t.a.x,t.a.y,0);
+                glVertex3f( t.c.x,t.c.y,0);
+                glVertex3f(t.a.x,t.a.y,0);
 
-        }
-        glEnd();
+            }
+            glEnd();
 
         }
     }
 
     if(draw2==1)
     {
-        ;
+
+            for(vector<triangle>::iterator it=trlist.begin(); it!=trlist.end(); it++)        //print
+        {
+
+            triangle t=(*it);
+            if(t.child1!=-1)continue;
+            if(t.a==p0 || t.b==p0 || t.c==p0)continue;
+            else if(t.a==p1 || t.b==p1 || t.c==p1)continue;
+            else if(t.a==p2 || t.b==p2 || t.c==p2)continue;
+            glColor3f(0,1.0,0);
+            triangle x1=trlist[t.opp_triangle_idx[t.a]];
+            if(containCorner(x1)==false)
+            {
+                glBegin(GL_LINES);
+                {
+                    glVertex3f( t.center.x,t.center.y,0);
+                    glVertex3f(x1.center.x,x1.center.y,0);
+
+                }
+                glEnd();
+            }
+            else
+            {
+                double vx1=t.c.x-t.b.x;
+                double vy1=t.c.y-t.b.y;
+                glBegin(GL_LINES);
+                {
+                    glVertex3f( t.center.x,t.center.y,0);
+                    glVertex3f(t.center.x+vy1,t.center.y-vx1,0);
+
+                }
+                glEnd();
+            }
+
+            triangle x2=trlist[t.opp_triangle_idx[t.b]];
+            if(containCorner(x2)==false)
+            {
+                glBegin(GL_LINES);
+                {
+                    glVertex3f( t.center.x,t.center.y,0);
+                    glVertex3f(x2.center.x,x2.center.y,0);
+
+                }
+                glEnd();
+            }
+            else
+            {
+                double vx1=t.a.x-t.c.x;
+                double vy1=t.a.y-t.c.y;
+                glBegin(GL_LINES);
+                {
+                    glVertex3f( t.center.x,t.center.y,0);
+                    glVertex3f(t.center.x+vy1,t.center.y-vx1,0);
+
+                }
+                glEnd();
+            }
+
+            triangle x3=trlist[t.opp_triangle_idx[t.c]];
+            if(containCorner(x3)==false)
+            {
+                glBegin(GL_LINES);
+                {
+                    glVertex3f( t.center.x,t.center.y,0);
+                    glVertex3f(x3.center.x,x3.center.y,0);
+
+                }
+                glEnd();
+            }
+            else
+            {
+                double vx1=t.b.x-t.a.x;
+                double vy1=t.b.y-t.a.y;
+                glBegin(GL_LINES);
+                {
+                    glVertex3f( t.center.x,t.center.y,0);
+                    glVertex3f(t.center.x+vy1,t.center.y-vx1,0);
+
+                }
+                glEnd();
+            }
+
+        }
     }
-    drawAxes();
+        drawAxes();
 
 
 
-    //ADD this line in the end --- if you use double buffer (i.e. GL_DOUBLE)
-    glutSwapBuffers();
-}
+        //ADD this line in the end --- if you use double buffer (i.e. GL_DOUBLE)
+        glutSwapBuffers();
+    }
 
 
-void animate()
-{
-    //angle+=0.05;
-    //codes for any changes in Models, Camera
-    glutPostRedisplay();
-}
+    void animate()
+    {
+        //angle+=0.05;
+        //codes for any changes in Models, Camera
+        glutPostRedisplay();
+    }
 
-void init()
-{
-    //codes for initialization
-    drawaxes=1;
+    void init()
+    {
+        //codes for initialization
+        drawaxes=1;
 
 
-    //clear the screen
-    glClearColor(0,0,0,0);
+        //clear the screen
+        glClearColor(0,0,0,0);
 
-    /************************
-    / set-up projection here
-    ************************/
-    //load the PROJECTION matrix
-    glMatrixMode(GL_PROJECTION);
+        /************************
+        / set-up projection here
+        ************************/
+        //load the PROJECTION matrix
+        glMatrixMode(GL_PROJECTION);
 
-    //initialize the matrix
-    glLoadIdentity();
+        //initialize the matrix
+        glLoadIdentity();
 
-    //give PERSPECTIVE parameters
-    gluPerspective(80,	1,	1,	1000.0);
-    //field of view in the Y (vertically)
-    //aspect ratio that determines the field of view in the X direction (horizontally)
-    //near distance
-    //far distance
-}
+        //give PERSPECTIVE parameters
+        gluPerspective(80,	1,	1,	1000.0);
+        //field of view in the Y (vertically)
+        //aspect ratio that determines the field of view in the X direction (horizontally)
+        //near distance
+        //far distance
+    }
 //}
 
-int main(int argc, char **argv)
-{
+    int main(int argc, char **argv)
+    {
 
 
-    input();
+        input();
 
 
-    triangle t0(p0,p1,p2,0);
-    trlist.push_back(t0);
+        triangle t0(p0,p1,p2,0);
+        trlist.push_back(t0);
 //    point z1=points[0];
 //
 //    splitA(t0,z1);
 
-    int len=points.size();
-    for(int i=0; i<len; i++)
+        int len=points.size();
+        for(int i=0; i<len; i++)
 
-    {
-        point z1=points[i];
-        //cout<<Tlist.size()<<"**********"<<endl;
-        //T tmp;
-        for(vector<triangle>::iterator it=trlist.begin(); it!=trlist.end(); it++)        //print
         {
-            triangle t=(*it);
-            if(t.child1!=-1)continue;
-            if(position(t,z1)==1)
+            point z1=points[i];
+
+            triangle tq=trlist[0];
+            while(true)
             {
-                //printTriangle(t);
-                splitA(t,z1);
-                break;
+                if(tq.child1==-1)break;
+
+                if(position(trlist[tq.child1],z1)>0)
+                    tq=trlist[tq.child1];
+
+                else if(position(trlist[tq.child2],z1)>0)
+                    tq=trlist[tq.child2];
+
+                else tq=trlist[tq.child3];
             }
-            else if(position(t,z1)==2)
-            {
-//                printTriangle(t);
-//                printTriangle(trlist[t.opp_triangle_idx[t.a]]);
-//                printTriangle(trlist[t.opp_triangle_idx[t.b]]);
-//                printTriangle(trlist[t.opp_triangle_idx[t.c]]);
-                splitB(t,z1);
-                break;
-            }
+            if(position(tq,z1)==1)
+                splitA(tq,z1);
+
+            else if(position(tq,z1)==2)
+                splitB(tq,z1);
+
+            printTriangle(tq);
 
         }
-
-
-    }
-    for(vector<triangle>::iterator it=trlist.begin(); it!=trlist.end(); it++)        //print
+        for(vector<triangle>::iterator it=trlist.begin(); it!=trlist.end(); it++)        //print
         {
 
             triangle t=(*it);
             if(t.child1!=-1)continue;
+            point p=findCircumCenter(t.a,t.b,t.c);
+            (*it).center=p;
 //            printTriangle(t);
 //            cout<<"opposite"<<endl;
 //            point f,g,h;
@@ -665,31 +750,31 @@ int main(int argc, char **argv)
 //            if(t.opp_triangle_idx[t.b]!=-1)printTriangle(trlist[t.opp_triangle_idx[t.b]]);
 //            if(t.opp_triangle_idx[t.c]!=-1)printTriangle(trlist[t.opp_triangle_idx[t.c]]);
 
-            cout<<"*****\n";
+//        cout<<"*****\n";
 
         }
 
 
-    glutInit(&argc,argv);
-    glutInitWindowSize(700, 600);
-    glutInitWindowPosition(0, 0);
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);	//Depth, Double buffer, RGB color
+        glutInit(&argc,argv);
+        glutInitWindowSize(700, 600);
+        glutInitWindowPosition(0, 0);
+        glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);	//Depth, Double buffer, RGB color
 
-    glutCreateWindow("My OpenGL Program");
+        glutCreateWindow("My OpenGL Program");
 
-    init();
+        init();
 
-    glEnable(GL_DEPTH_TEST);	//enable Depth Testing
+        glEnable(GL_DEPTH_TEST);	//enable Depth Testing
 
-    glutDisplayFunc(display);	//display callback function
-    glutIdleFunc(animate);		//what you want to do in the idle time (when no drawing is occuring)
-    glutSpecialFunc(specialKeyListener);
+        glutDisplayFunc(display);	//display callback function
+        glutIdleFunc(animate);		//what you want to do in the idle time (when no drawing is occuring)
+        glutSpecialFunc(specialKeyListener);
 
-    glutMainLoop();
+        glutMainLoop();
 
 
 
-}
+    }
 
 
 //    for(vector<point>::iterator it=points.begin();it!=points.end();it++)         //print
