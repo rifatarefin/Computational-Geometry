@@ -4,7 +4,7 @@
 #include<GL/glut.h>
 using namespace std;
 #define pi (2*acos(0.0))
-ifstream fin("input2.txt");
+ifstream fin("input3.txt");
 
 struct point
 {
@@ -539,9 +539,9 @@ void display()
 
             triangle t=(*it);
             if(t.child1!=-1)continue;
-            if(t.a==p0 || t.b==p0 || t.c==p0)continue;
-            else if(t.a==p1 || t.b==p1 || t.c==p1)continue;
-            else if(t.a==p2 || t.b==p2 || t.c==p2)continue;
+//            if(t.a==p0 || t.b==p0 || t.c==p0)continue;
+//            else if(t.a==p1 || t.b==p1 || t.c==p1)continue;
+//            else if(t.a==p2 || t.b==p2 || t.c==p2)continue;
             glColor3f(1.0,0,0);
             glBegin(GL_LINES);
             {
