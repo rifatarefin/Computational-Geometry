@@ -10,7 +10,7 @@ struct point
 {
     double x,y;
     int lchild=-1,rchild=-1;
-    int indx;
+    int indx,depth;
     double xmin=-9999,ymin=-9999;
     double xmax=9999, ymax=9999;
 };
@@ -25,9 +25,9 @@ bool compareByX(const point &a, const point &b)
     return a.x < b.x;
 }
 vector<point>points;
-
-
-
+point a,b,query,nn;
+int cnt=0;
+int root;
 void input()
 {
     int n;
@@ -48,9 +48,21 @@ void input()
 
 double dist(point a,point b)
 {
-    return (a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y);
+    return sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
 }
 
+void reportSubTree(int indx)
+{
+    point v=points[indx];
+    if(v.lchild==-1 && v.rchild==-1)
+    {
+        cout<<v.x<<" "<<v.y<<endl;
+        return;
+    }
+    reportSubTree(v.lchild);
+    reportSubTree(v.rchild);
+
+}
 int buildKDTree(vector<point>xpoints, vector<point>ypoints, int depth)
 {
     if(xpoints.size()==1)return xpoints[0].indx;
@@ -97,16 +109,144 @@ int buildKDTree(vector<point>xpoints, vector<point>ypoints, int depth)
     }
     int vleft=buildKDTree(baamx,baamy,depth+1);
     int vright=buildKDTree(daanx,daany,depth+1);
-    points[order].lchild=vleft;
-    points[order].rchild=vright;
-    return points[order].indx;
+    point np=points[order];
+    np.lchild=vleft;
+    np.rchild=vright;
+    np.depth=depth;
+    np.indx=points.size();
+    points.push_back(np);
+    return np.indx;
 
 
 }
 
+void region(int root,int depth)
+{
+    point q=points[root];
+
+
+    if(q.lchild==-1 && q.rchild==-1)return;
+    if(depth%2==0)
+    {
+        points[q.lchild].xmax=q.x;
+        points[q.lchild].xmin=q.xmin;
+        points[q.rchild].xmin=q.x;
+        points[q.rchild].xmax=q.xmax;
+    }
+    else
+    {
+        points[q.lchild].ymax=q.y;
+        points[q.lchild].ymin=q.ymin;
+        points[q.rchild].ymin=q.y;
+        points[q.lchild].ymax=q.ymax;
+    }
+    region(q.lchild,depth+1);
+    region(q.rchild,depth+1);
+}
 void searchKDTree(int v, point a, point b)
 {
+    point qr=points[v];
+    if(qr.lchild==-1 && qr.rchild==-1)
+    {
+        if((qr.x>=a.x && qr.x<=b.x) && (qr.y>=a.y && qr.y<=b.y))
+        {
+            cout<<"("<<qr.x<<" "<<qr.y<<")"<<endl;
+            cnt++;
+        }
+        return;
+    }
+    if(qr.xmin>=b.x || qr.xmax<a.x || qr.ymin>=b.y || qr.ymax<a.y)return;
+    point l=points[qr.lchild];
+    point r=points[qr.rchild];
+    if((l.xmin>a.x && l.xmax<=b.x) && (l.ymin>a.y && l.ymax<=b.y))
+    {
+        reportSubTree(l.indx);
+        return;
+    }
+    else
+    {
+        searchKDTree(l.indx,a,b);
+    }
+    if((r.xmin>a.x && r.xmax<=b.x) && (r.ymin>a.y && r.ymax<=b.y))
+    {
+        reportSubTree(r.indx);
+        return;
+    }
+    else
+    {
+        searchKDTree(r.indx,a,b);
+    }
 
+
+}
+
+point nearestNeighbor(int root, point query)
+{
+    point tp=points[root];
+    if(tp.lchild==-1 && tp.rchild==-1)
+    {
+        //cout<<"************"<<tp.x<<" "<<tp.y<<endl;
+        return tp;
+    }
+    if(tp.depth%2==0)
+    {
+
+        if(query.x<=tp.x)
+        {
+            point p1=nearestNeighbor(tp.lchild,query);
+            point p2;
+            double d=points[tp.rchild].x-query.x;
+            double dst1=dist(p1,query);
+            if(d<=dst1)
+            {
+                p2=nearestNeighbor(tp.rchild,query);
+            }
+            point best=dst1<=dist(p2,query)?p1:p2;
+            return best;
+        }
+        else
+        {
+            point p1=nearestNeighbor(tp.rchild,query);
+            point p2;
+            double d=query.x-points[tp.lchild].x;
+            double dst1=dist(p1,query);
+            if(d<=dst1)
+            {
+                p2=nearestNeighbor(tp.lchild,query);
+            }
+            point best=dst1<=dist(p2,query)?p1:p2;
+            return best;
+        }
+    }
+    else
+    {
+        if(query.y<=tp.y)
+        {
+            point p1=nearestNeighbor(tp.lchild,query);
+            point p2;
+            double d=points[tp.rchild].y-query.y;
+            double dst1=dist(p1,query);
+            if(d<=dst1)
+            {
+                p2=nearestNeighbor(tp.rchild,query);
+            }
+            point best=dst1<=dist(p2,query)?p1:p2;
+            return best;
+        }
+        else
+        {
+            point p1=nearestNeighbor(tp.rchild,query);
+            point p2;
+            double d=query.y-points[tp.lchild].y;
+            double dst1=dist(p1,query);
+            if(d<=dst1)
+            {
+                p2=nearestNeighbor(tp.lchild,query);
+            }
+            point best=dst1<=dist(p2,query)?p1:p2;
+            return best;
+        }
+    }
 }
 
 //{
@@ -133,7 +273,21 @@ void drawAxes()
         glEnd();
     }
 }
+void DrawCircle(float cx, float cy, float r, int num_segments)
+{
+	glBegin(GL_LINE_LOOP);
+	for(int ii = 0; ii < num_segments; ii++)
+	{
+		float theta = 2.0f * 3.1415926f * float(ii) / float(num_segments);//get the current angle
 
+		float x = r * cosf(theta);//calculate the x component
+		float y = r * sinf(theta);//calculate the y component
+
+		glVertex2f(x + cx, y + cy);//output vertex
+
+	}
+	glEnd();
+}
 void specialKeyListener(int key, int x,int y)
 {
     switch(key)
@@ -147,7 +301,22 @@ void specialKeyListener(int key, int x,int y)
         draw2=1-draw2;
         break;
     case GLUT_KEY_DOWN:
-        drawaxes=1-drawaxes;
+        string s;
+        fin>>s;
+        if(s=="R")
+        {
+            fin>>a.x>>a.y>>b.x>>b.y;
+            cnt=0;
+            searchKDTree(root,a,b);
+            cout<<cnt<<endl;
+        }
+        else if(s=="N")
+        {
+            fin>>query.x>>query.y;
+
+            nn=nearestNeighbor(root,query);
+            cout<<dist(query,nn)<<"("<<nn.x<<" "<<nn.y<<")"<<endl;
+        }
 
         break;
     }
@@ -205,9 +374,40 @@ void display()
         glEnd();
 
     }
+    glColor3f(1, 0, 0);
 
+    glBegin(GL_POINTS);
+    {
 
+        glVertex3f(query.x,query.y,0);
 
+    }
+    glEnd();
+
+    if(draw1==1)
+    {
+        glColor3f(0, 1.0, 0);
+        glBegin(GL_LINES);
+        {
+            glVertex3f( a.x,a.y,0);
+            glVertex3f(b.x,a.y,0);
+
+            glVertex3f(b.x,a.y,0);
+            glVertex3f(b.x,b.y,0);
+
+            glVertex3f(b.x,b.y, 0);
+            glVertex3f(a.x,b.y,0);
+
+            glVertex3f(a.x,b.y, 0);
+            glVertex3f(a.x,a.y,0);
+        }
+        glEnd();
+    }
+    if(draw2==1)
+    {
+        glColor3f(1, 0, 0);
+        DrawCircle(query.x,query.y,dist(query,nn),100);
+    }
 
         drawAxes();
 
@@ -229,7 +429,7 @@ void display()
     {
         //codes for initialization
         drawaxes=1;
-
+        a.x=-100,a.y=-100,b.x=-200,b.y=-200,query.x=-200,query.y=-200,nn.x=-200,nn.y=-200;
 
         //clear the screen
         glClearColor(0,0,0,0);
@@ -261,14 +461,18 @@ void display()
         vector<point>ypoints=points;
         sort(xpoints.begin(),xpoints.end(),compareByX);
         sort(ypoints.begin(),ypoints.end(),compareByY);
-        int root=buildKDTree(xpoints,ypoints,0);
-        //cout<<points[root].rchild;
-    cout<<endl;
-    for(vector<point>::iterator it=points.begin();it!=points.end();it++)         //print
-    {
-        point tr=*it;
-        cout<<tr.x<<" "<<tr.y<<" "<<tr.lchild<<" "<<tr.rchild<<endl;
-    }cout<<endl;
+        root=buildKDTree(xpoints,ypoints,0);
+        //cout<<root<<endl;
+        //reportSubTree(root);
+        region(root,0);
+
+
+//        cout<<endl;
+//        for(vector<point>::iterator it=points.begin();it!=points.end();it++)         //print
+//        {
+//            point tr=*it;
+//            cout<<tr.x<<" "<<tr.y<<" "<<tr.lchild<<" "<<tr.rchild<<" "<<tr.xmin<<" "<<tr.xmax<<" "<<tr.ymin<<" "<<tr.ymax<<endl;
+//        }cout<<endl;
 
         glutInit(&argc,argv);
         glutInitWindowSize(700, 600);
