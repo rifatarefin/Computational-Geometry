@@ -38,7 +38,7 @@ A set is maintained to store the edges in T. The `<` Operator was overloaded to 
 ## Delaunay Triangulation & Voronoi Diagram
 The problem description is available [here](<Offline 3/Assignment 3.pdf>)
 
-| ![](<Offline 2/Testcases/1.png>) <br> Input points | ![](<Offline 2/Testcases/2.png>) <br> Delaunay Triangulation |
+| ![](<Offline 3/Testcases/1.png>) <br> Input points | ![](<Offline 3/Testcases/2.png>) <br> Delaunay Triangulation |
 | :------------ | :------------ |
-| ![](<Offline 2/Testcases/3.png>)<br> **Voronoi Diagram** |  ![](<Offline 2/Testcases/4.png>)<br> **Another example** |
+| ![](<Offline 3/Testcases/3.png>)<br> **Voronoi Diagram** |  ![](<Offline 3/Testcases/4.png>)<br> **Another example** |
 
