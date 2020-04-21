@@ -14,4 +14,4 @@ Time complexity of Graham Scan algorithm is always *`O(nlogn)`* irrespective of 
 |3. *Graham Scan* performs better than *Quick Hull*| 4. *Graham Scan* performs same as *Quick Hull* |
 | :------------ | :------------ |
 | ![](<Offline 1/Testcases/3.png>) | ![](<Offline 1/Testcases/4.png>)  |
-| **Complexity** <br> Graham Scan: *`O(nlogn)`*<br> Gift Wrapping: *`O(n^2)`* |  **Complexity** <br> Graham Scan: *`O(nlogn)`*<br> Gift Wrapping: *`O(nlogn)`* |
+| **Complexity** <br> Graham Scan: *`O(nlogn)`*<br> Quick Hull: *`O(n^2)`* |  **Complexity** <br> Graham Scan: *`O(nlogn)`*<br> Quick Hull: *`O(nlogn)`* |
