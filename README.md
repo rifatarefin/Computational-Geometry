@@ -1,6 +1,6 @@
-# Computational Geometry
-
-## Assignment 1 - Computation of Convex Hull
+# Computational Geometry Topics
+All algorithms are implemented in C++. OpenGL is used for graphical representation.
+## Computation of Convex Hull
 The problem description is available [here](<Offline 1/Assignment 1.pdf>)
 
 ### Time Complexity of Graham Scan Algorithm:
@@ -16,7 +16,7 @@ Time complexity of Graham Scan algorithm is always *`O(nlogn)`* irrespective of 
 | ![](<Offline 1/Testcases/3.png>) | ![](<Offline 1/Testcases/4.png>)  |
 | **Complexity** <br> Graham Scan: *`O(nlogn)`*<br> Quick Hull: *`O(n^2)`* |  **Complexity** <br> Graham Scan: *`O(nlogn)`*<br> Quick Hull: *`O(nlogn)`* |
 
-## Assignment 2 - Polygon Partitioning
+## Polygon Partitioning
 The problem description is available [here](<Offline 2/Assignment 2.pdf>)
 
 **Data Structure Used:** To store the vertices, I used structure with the following attributes:
@@ -32,4 +32,4 @@ A set is maintained to store the edges in T. The `<` Operator was overloaded to 
 
 | ![](<Offline 2/Testcases/1.png>) <br> Input polygon | ![](<Offline 2/Testcases/2.png>) <br> Y-monotone pieces |
 | :------------ | :------------ |
-| ![](<Offline 2/Testcases/3.png>)<br> Polygon triangulation |  ![](<Offline 2/Testcases/4.png>)<br> Another example |
+| ![](<Offline 2/Testcases/3.png>)<br> **Polygon triangulation** |  ![](<Offline 2/Testcases/4.png>)<br> **Another example** |
